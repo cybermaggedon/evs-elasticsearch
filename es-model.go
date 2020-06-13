@@ -1,328 +1,16 @@
-
 // ES model - presenting an event protobuf as an ElasticSearch event
 
 package main
 
 import (
+	"encoding/binary"
 	evs "github.com/cybermaggedon/evs-golang-api"
 	"github.com/golang/protobuf/ptypes"
 	"net"
-	"encoding/binary"
 	"strconv"
 )
 
-const mappings = `
-{
-		    "cyberprobe": {
-		      "properties": {
-		        "id": {
-		          "type": "keyword"
-		        },
-		        "time": {
-		          "type": "date"
-		        },
-		        "url": {
-		          "type": "keyword"
-		        },
-		        "action": {
-		          "type": "keyword"
-		        },
-		        "device": {
-		          "type": "keyword"
-		        },
-		        "network": {
-		          "type": "keyword"
-		        },
-		        "origin": {
-		          "type": "keyword"
-		        },
-		        "risk": {
-		          "type": "float"
-		        },
-				"operations" : {
-					"properties": {
-						"unknown": {
-							"type": "keyword"
-						}
-					}
-				},
-		        "dns": {
-		          "properties": {
-		            "type": {
-		              "type": "keyword"
-		            },
-		            "query": {
-		              "properties": {
-		                "name": {
-		                  "type": "keyword"
-		                },
-		                "type": {
-		                  "type": "keyword"
-		                },
-		                "class": {
-		                  "type": "keyword"
-		                }
-		              }
-		            },
-		            "answer": {
-		              "properties": {
-		                "name": {
-		                  "type": "keyword"
-		                },
-		                "type": {
-		                  "type": "keyword"
-		                },
-		                "class": {
-		                  "type": "keyword"
-		                },
-		                "address": {
-		                  "type": "keyword"
-		                }
-		              }
-		            }
-		          }
-		        },
-		        "http": {
-		          "properties": {
-		            "method": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "keyword"
-		            },
-		            "code": {
-		              "type": "integer"
-		            },
-		            "header": {
-		              "properties": {
-		                "User-Agent": {
-		                  "type": "keyword"
-		                },
-		                "Host": {
-		                  "type": "keyword"
-		                },
-		                "Content-Type": {
-		                  "type": "keyword"
-		                },
-		                "Server": {
-		                  "type": "keyword"
-		                },
-		                "Connection": {
-		                  "type": "keyword"
-		                }
-		              }
-		            }
-		          }
-		        },
-		        "ftp": {
-		          "properties": {
-		            "command": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "integer"
-		            },
-		            "text": {
-		              "type": "text"
-		            }
-		          }
-		        },
-		        "icmp": {
-		          "properties": {
-		            "type": {
-		              "type": "integer"
-		            },
-		            "code": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "sip": {
-		          "properties": {
-		            "method": {
-		              "type": "keyword"
-		            },
-		            "from": {
-		              "type": "keyword"
-		            },
-		            "to": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "keyword"
-		            },
-		            "code": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "smtp": {
-		          "properties": {
-		            "command": {
-		              "type": "keyword"
-		            },
-		            "from": {
-		              "type": "keyword"
-		            },
-		            "to": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "keyword"
-		            },
-		            "text": {
-		              "type": "text"
-		            },
-		            "code": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "ntp": {
-		          "properties": {
-		            "version": {
-		              "type": "integer"
-		            },
-		            "mode": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "unrecognised_payload": {
-		          "properties": {
-		            "sha1": {
-		              "type": "keyword"
-		            },
-		            "length": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "src": {
-		          "properties": {
-		            "ipv4": {
-		              "type": "ip"
-		            },
-		            "ipv6": {
-		              "type": "ip"
-		            },
-		            "tcp": {
-		              "type": "integer"
-		            },
-		            "udp": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "dest": {
-		          "properties": {
-		            "ipv4": {
-		              "type": "ip"
-		            },
-		            "ipv6": {
-		              "type": "ip"
-		            },
-		            "tcp": {
-		              "type": "integer"
-		            },
-		            "udp": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "location": {
-		          "properties": {
-		            "src": {
-		              "properties": {
-		                "city": {
-		                  "type": "keyword"
-		                },
-		                "iso": {
-		                  "type": "keyword"
-		                },
-		                "country": {
-		                  "type": "keyword"
-		                },
-		                "asnum": {
-		                  "type": "integer"
-		                },
-		                "asorg": {
-		                  "type": "keyword"
-		                },
-		                "position": {
-		                  "type": "geo_point"
-		                },
-		                "accuracy": {
-		                  "type": "integer"
-		                },
-		                "postcode": {
-		                  "type": "keyword"
-		                }
-		              }
-		            },
-		            "dest": {
-		              "properties": {
-		                "city": {
-		                  "type": "keyword"
-		                },
-		                "iso": {
-		                  "type": "keyword"
-		                },
-		                "country": {
-		                  "type": "keyword"
-		                },
-		                "asnum": {
-		                  "type": "integer"
-		                },
-		                "asorg": {
-		                  "type": "keyword"
-		                },
-		                "position": {
-		                  "type": "geo_point"
-		                },
-		                "accuracy": {
-		                  "type": "integer"
-		                },
-		                "postcode": {
-		                  "type": "keyword"
-		                }
-		              }
-		            }
-		          }
-		        },
-		        "indicators": {
-		          "properties": {
-		            "id": {
-		              "type": "keyword"
-		            },
-		            "type": {
-		              "type": "keyword"
-		            },
-		            "value": {
-		              "type": "keyword"
-		            },
-		            "description": {
-		              "type": "keyword"
-		            },
-		            "category": {
-		              "type": "keyword"
-		            },
-		            "author": {
-		              "type": "keyword"
-		            },
-		            "source": {
-		              "type": "keyword"
-		            },
-		            "probability": {
-		              "type": "float"
-		            }
-		          }
-		        }
-		      }
-		    }
-		  }
-		}`
-
+type TypeMapping map[string]interface{}
 
 type ObQuery struct {
 	Name  []string `json:"name,omitempty"`
@@ -338,13 +26,13 @@ type ObAnswer struct {
 }
 
 type ObIndicators struct {
-	Id          []string `json:"id,omitempty"`
-	Type        []string `json:"type,omitempty"`
-	Value       []string `json:"value,omitempty"`
-	Description []string `json:"description,omitempty"`
-	Category    []string `json:"category,omitempty"`
-	Author      []string `json:"author,omitempty"`
-	Source      []string `json:"source,omitempty"`
+	Id          []string  `json:"id,omitempty"`
+	Type        []string  `json:"type,omitempty"`
+	Value       []string  `json:"value,omitempty"`
+	Description []string  `json:"description,omitempty"`
+	Category    []string  `json:"category,omitempty"`
+	Author      []string  `json:"author,omitempty"`
+	Source      []string  `json:"source,omitempty"`
 	Probability []float32 `json:"probability,omitempty"`
 }
 
@@ -352,12 +40,12 @@ type ObHttp struct {
 	Method string            `json:"method,omitempty"`
 	Header map[string]string `json:"header,omitempty"`
 	Status string            `json:"status,omitempty"`
-	Code   int32               `json:"code,omitempty"`
+	Code   int32             `json:"code,omitempty"`
 }
 
 type ObFtp struct {
 	Command string   `json:"command,omitempty"`
-	Status  int32      `json:"status,omitempty"`
+	Status  int32    `json:"status,omitempty"`
 	Text    []string `json:"text,omitempty"`
 }
 
@@ -377,14 +65,14 @@ type ObSip struct {
 	From   string `json:"from,omitempty"`
 	To     string `json:"to,omitempty"`
 	Status string `json:"status,omitempty"`
-	Code   int32    `json:"code,omitempty"`
+	Code   int32  `json:"code,omitempty"`
 }
 
 type ObSmtp struct {
 	Command string   `json:"command,omitempty"`
 	From    string   `json:"from,omitempty"`
 	To      []string `json:"to,omitempty"`
-	Status  int32      `json:"status,omitempty"`
+	Status  int32    `json:"status,omitempty"`
 	Text    []string `json:"text,omitempty"`
 }
 
@@ -395,7 +83,7 @@ type ObNtp struct {
 
 type ObUnrecog struct {
 	Sha1   string `json:"sha1,omitempty"`
-	Length int64    `json:"length,omitempty"`
+	Length int64  `json:"length,omitempty"`
 }
 
 type Observation struct {
@@ -452,7 +140,7 @@ func bytesToIp(b []byte) net.IP {
 func Convert(ev *evs.Event) *Observation {
 
 	ob := &Observation{}
-	
+
 	ob.Id = ev.Id
 	ob.Action = ev.Action.String()
 	ob.Device = ev.Device
@@ -462,10 +150,10 @@ func Convert(ev *evs.Event) *Observation {
 	ob.Time = tm.String()
 	ob.Url = ev.Url
 	ob.Location = ev.Location
-//	ob.Risk = ev.Risk
+	//	ob.Risk = ev.Risk
 
 	switch d := ev.Detail.(type) {
-		case *evs.Event_DnsMessage:
+	case *evs.Event_DnsMessage:
 
 		msg := d.DnsMessage
 
@@ -509,27 +197,27 @@ func Convert(ev *evs.Event) *Observation {
 			Header: d.HttpResponse.Header,
 		}
 		break
-		
+
 	case *evs.Event_FtpCommand:
 		ob.Ftp = &ObFtp{
 			Command: d.FtpCommand.Command,
 		}
 		break
-		
+
 	case *evs.Event_FtpResponse:
 		ob.Ftp = &ObFtp{
 			Status: d.FtpResponse.Status,
 			Text:   d.FtpResponse.Text,
 		}
 		break
-		
+
 	case *evs.Event_Icmp:
 		ob.Icmp = &ObIcmp{
 			Type: d.Icmp.Type,
 			Code: d.Icmp.Code,
 		}
 		break
-		
+
 	case *evs.Event_SipRequest:
 		ob.Sip = &ObSip{
 			Method: d.SipRequest.Method,
@@ -537,7 +225,7 @@ func Convert(ev *evs.Event) *Observation {
 			To:     d.SipRequest.To,
 		}
 		break
-		
+
 	case *evs.Event_SipResponse:
 		ob.Sip = &ObSip{
 			Code:   d.SipResponse.Code,
@@ -546,59 +234,59 @@ func Convert(ev *evs.Event) *Observation {
 			To:     d.SipResponse.To,
 		}
 		break
-		
+
 	case *evs.Event_SmtpCommand:
 		ob.Smtp = &ObSmtp{
 			Command: d.SmtpCommand.Command,
 		}
 		break
-		
+
 	case *evs.Event_SmtpResponse:
 		ob.Smtp = &ObSmtp{
 			Status: d.SmtpResponse.Status,
 			Text:   d.SmtpResponse.Text,
 		}
 		break
-		
+
 	case *evs.Event_SmtpData:
 		ob.Smtp = &ObSmtp{
 			From: d.SmtpData.From,
 			To:   d.SmtpData.To,
 		}
 		break
-		
+
 	case *evs.Event_NtpTimestamp:
 		ob.Ntp = &ObNtp{
 			Version: d.NtpTimestamp.Version,
 			Mode:    d.NtpTimestamp.Mode,
 		}
 		break
-		
+
 	case *evs.Event_NtpControl:
 		ob.Ntp = &ObNtp{
 			Version: d.NtpControl.Version,
 			Mode:    d.NtpControl.Mode,
 		}
 		break
-		
+
 	case *evs.Event_NtpPrivate:
 		ob.Ntp = &ObNtp{
 			Version: d.NtpPrivate.Version,
 			Mode:    d.NtpPrivate.Mode,
 		}
 		break
-		
+
 	case *evs.Event_UnrecognisedStream:
 		ob.Unrecognised = &ObUnrecog{
-//			Sha1:   d.UnrecognisedStream.PayloadHash,
-//			Length: d.UnrecognisedStream.PayloadLength,
+			//			Sha1:   d.UnrecognisedStream.PayloadHash,
+			//			Length: d.UnrecognisedStream.PayloadLength,
 		}
 		break
-		
+
 	case *evs.Event_UnrecognisedDatagram:
 		ob.Unrecognised = &ObUnrecog{
-//			Sha1:   d.UnrecognisedDatagram.PayloadHash,
-//			Length: d.UnrecognisedDatagram.PayloadLength,
+			//			Sha1:   d.UnrecognisedDatagram.PayloadHash,
+			//			Length: d.UnrecognisedDatagram.PayloadLength,
 		}
 		break
 
@@ -623,9 +311,9 @@ func Convert(ev *evs.Event) *Observation {
 			ob.Indicators.Source =
 				append(ob.Indicators.Source, val.Source)
 			// FIXME:
-//			ob.Indicators.Probability =
-//				append(ob.Indicators.Probability,
-//				val.Probability)
+			//			ob.Indicators.Probability =
+			//				append(ob.Indicators.Probability,
+			//				val.Probability)
 		}
 	}
 

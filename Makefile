@@ -7,8 +7,10 @@ GO=GOPATH=$$(pwd)/go go
 
 all: evs-elasticsearch build
 
-evs-elasticsearch: evs-elasticsearch.go es-model.go es-load.go go.mod go.sum
-	${GO} build -o $@ evs-elasticsearch.go es-model.go es-load.go
+SOURCE=evs-elasticsearch.go es-model.go es-load.go es-mapping.go
+
+evs-elasticsearch: ${SOURCE} go.mod go.sum
+	${GO} build -o $@ ${SOURCE}
 
 build: evs-elasticsearch
 	${DOCKER} build -t ${REPO}:${VERSION} -f Dockerfile .
