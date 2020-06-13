@@ -1,308 +1,310 @@
 package main
 
-var mapping = TypeMapping{"cyberprobe": obMapping}
+type Mapping map[string]interface{}
 
-var obMapping = TypeMapping{
-	"properties": TypeMapping{
-		"id": TypeMapping{
+var mapping = Mapping{"cyberprobe": obMapping}
+
+var obMapping = Mapping{
+	"properties": Mapping{
+		"id": Mapping{
 			"type": "keyword",
 		},
-		"time": TypeMapping{
+		"time": Mapping{
 			"type": "date",
 		},
-		"url": TypeMapping{
+		"url": Mapping{
 			"type": "keyword",
 		},
-		"action": TypeMapping{
+		"action": Mapping{
 			"type": "keyword",
 		},
-		"device": TypeMapping{
+		"device": Mapping{
 			"type": "keyword",
 		},
-		"network": TypeMapping{
+		"network": Mapping{
 			"type": "keyword",
 		},
-		"origin": TypeMapping{
+		"origin": Mapping{
 			"type": "keyword",
 		},
-		"risk": TypeMapping{
+		"risk": Mapping{
 			"type": "float",
 		},
-		"operations": TypeMapping{
-			"properties": TypeMapping{
-				"unknown": TypeMapping{
+		"operations": Mapping{
+			"properties": Mapping{
+				"unknown": Mapping{
 					"type": "keyword",
 				},
 			},
 		},
-		"dns": TypeMapping{
-			"properties": TypeMapping{
-				"type": TypeMapping{
+		"dns": Mapping{
+			"properties": Mapping{
+				"type": Mapping{
 					"type": "keyword",
 				},
-				"query": TypeMapping{
-					"properties": TypeMapping{
-						"name": TypeMapping{
+				"query": Mapping{
+					"properties": Mapping{
+						"name": Mapping{
 							"type": "keyword",
 						},
-						"type": TypeMapping{
+						"type": Mapping{
 							"type": "keyword",
 						},
-						"class": TypeMapping{
+						"class": Mapping{
 							"type": "keyword",
 						},
 					},
 				},
-				"answer": TypeMapping{
-					"properties": TypeMapping{
-						"name": TypeMapping{
+				"answer": Mapping{
+					"properties": Mapping{
+						"name": Mapping{
 							"type": "keyword",
 						},
-						"type": TypeMapping{
+						"type": Mapping{
 							"type": "keyword",
 						},
-						"class": TypeMapping{
+						"class": Mapping{
 							"type": "keyword",
 						},
-						"address": TypeMapping{
+						"address": Mapping{
 							"type": "keyword",
 						},
 					},
 				},
 			},
 		},
-		"http": TypeMapping{
-			"properties": TypeMapping{
-				"method": TypeMapping{
+		"http": Mapping{
+			"properties": Mapping{
+				"method": Mapping{
 					"type": "keyword",
 				},
-				"status": TypeMapping{
+				"status": Mapping{
 					"type": "keyword",
 				},
-				"code": TypeMapping{
+				"code": Mapping{
 					"type": "integer",
 				},
-				"header": TypeMapping{
-					"properties": TypeMapping{
-						"User-Agent": TypeMapping{
+				"header": Mapping{
+					"properties": Mapping{
+						"User-Agent": Mapping{
 							"type": "keyword",
 						},
-						"Host": TypeMapping{
+						"Host": Mapping{
 							"type": "keyword",
 						},
-						"Content-Type": TypeMapping{
+						"Content-Type": Mapping{
 							"type": "keyword",
 						},
-						"Server": TypeMapping{
+						"Server": Mapping{
 							"type": "keyword",
 						},
-						"Connection": TypeMapping{
+						"Connection": Mapping{
 							"type": "keyword",
 						},
 					},
 				},
 			},
 		},
-		"ftp": TypeMapping{
-			"properties": TypeMapping{
-				"command": TypeMapping{
+		"ftp": Mapping{
+			"properties": Mapping{
+				"command": Mapping{
 					"type": "keyword",
 				},
-				"status": TypeMapping{
+				"status": Mapping{
 					"type": "integer",
 				},
-				"text": TypeMapping{
+				"text": Mapping{
 					"type": "text",
 				},
 			},
 		},
-		"icmp": TypeMapping{
-			"properties": TypeMapping{
-				"type": TypeMapping{
+		"icmp": Mapping{
+			"properties": Mapping{
+				"type": Mapping{
 					"type": "integer",
 				},
-				"code": TypeMapping{
-					"type": "integer",
-				},
-			},
-		},
-		"sip": TypeMapping{
-			"properties": TypeMapping{
-				"method": TypeMapping{
-					"type": "keyword",
-				},
-				"from": TypeMapping{
-					"type": "keyword",
-				},
-				"to": TypeMapping{
-					"type": "keyword",
-				},
-				"status": TypeMapping{
-					"type": "keyword",
-				},
-				"code": TypeMapping{
+				"code": Mapping{
 					"type": "integer",
 				},
 			},
 		},
-		"smtp": TypeMapping{
-			"properties": TypeMapping{
-				"command": TypeMapping{
+		"sip": Mapping{
+			"properties": Mapping{
+				"method": Mapping{
 					"type": "keyword",
 				},
-				"from": TypeMapping{
+				"from": Mapping{
 					"type": "keyword",
 				},
-				"to": TypeMapping{
+				"to": Mapping{
 					"type": "keyword",
 				},
-				"status": TypeMapping{
+				"status": Mapping{
 					"type": "keyword",
 				},
-				"text": TypeMapping{
+				"code": Mapping{
+					"type": "integer",
+				},
+			},
+		},
+		"smtp": Mapping{
+			"properties": Mapping{
+				"command": Mapping{
+					"type": "keyword",
+				},
+				"from": Mapping{
+					"type": "keyword",
+				},
+				"to": Mapping{
+					"type": "keyword",
+				},
+				"status": Mapping{
+					"type": "keyword",
+				},
+				"text": Mapping{
 					"type": "text",
 				},
-				"code": TypeMapping{
+				"code": Mapping{
 					"type": "integer",
 				},
 			},
 		},
-		"ntp": TypeMapping{
-			"properties": TypeMapping{
-				"version": TypeMapping{
+		"ntp": Mapping{
+			"properties": Mapping{
+				"version": Mapping{
 					"type": "integer",
 				},
-				"mode": TypeMapping{
+				"mode": Mapping{
 					"type": "integer",
 				},
 			},
 		},
-		"unrecognised_payload": TypeMapping{
-			"properties": TypeMapping{
-				"sha1": TypeMapping{
+		"unrecognised_payload": Mapping{
+			"properties": Mapping{
+				"sha1": Mapping{
 					"type": "keyword",
 				},
-				"length": TypeMapping{
+				"length": Mapping{
 					"type": "integer",
 				},
 			},
 		},
-		"src": TypeMapping{
-			"properties": TypeMapping{
-				"ipv4": TypeMapping{
+		"src": Mapping{
+			"properties": Mapping{
+				"ipv4": Mapping{
 					"type": "ip",
 				},
-				"ipv6": TypeMapping{
+				"ipv6": Mapping{
 					"type": "ip",
 				},
-				"tcp": TypeMapping{
+				"tcp": Mapping{
 					"type": "integer",
 				},
-				"udp": TypeMapping{
-					"type": "integer",
-				},
-			},
-		},
-		"dest": TypeMapping{
-			"properties": TypeMapping{
-				"ipv4": TypeMapping{
-					"type": "ip",
-				},
-				"ipv6": TypeMapping{
-					"type": "ip",
-				},
-				"tcp": TypeMapping{
-					"type": "integer",
-				},
-				"udp": TypeMapping{
+				"udp": Mapping{
 					"type": "integer",
 				},
 			},
 		},
-		"location": TypeMapping{
-			"properties": TypeMapping{
-				"src": TypeMapping{
-					"properties": TypeMapping{
-						"city": TypeMapping{
+		"dest": Mapping{
+			"properties": Mapping{
+				"ipv4": Mapping{
+					"type": "ip",
+				},
+				"ipv6": Mapping{
+					"type": "ip",
+				},
+				"tcp": Mapping{
+					"type": "integer",
+				},
+				"udp": Mapping{
+					"type": "integer",
+				},
+			},
+		},
+		"location": Mapping{
+			"properties": Mapping{
+				"src": Mapping{
+					"properties": Mapping{
+						"city": Mapping{
 							"type": "keyword",
 						},
-						"iso": TypeMapping{
+						"iso": Mapping{
 							"type": "keyword",
 						},
-						"country": TypeMapping{
+						"country": Mapping{
 							"type": "keyword",
 						},
-						"asnum": TypeMapping{
+						"asnum": Mapping{
 							"type": "integer",
 						},
-						"asorg": TypeMapping{
+						"asorg": Mapping{
 							"type": "keyword",
 						},
-						"position": TypeMapping{
+						"position": Mapping{
 							"type": "geo_point",
 						},
-						"accuracy": TypeMapping{
+						"accuracy": Mapping{
 							"type": "integer",
 						},
-						"postcode": TypeMapping{
+						"postcode": Mapping{
 							"type": "keyword",
 						},
 					},
 				},
-				"dest": TypeMapping{
-					"properties": TypeMapping{
-						"city": TypeMapping{
+				"dest": Mapping{
+					"properties": Mapping{
+						"city": Mapping{
 							"type": "keyword",
 						},
-						"iso": TypeMapping{
+						"iso": Mapping{
 							"type": "keyword",
 						},
-						"country": TypeMapping{
+						"country": Mapping{
 							"type": "keyword",
 						},
-						"asnum": TypeMapping{
+						"asnum": Mapping{
 							"type": "integer",
 						},
-						"asorg": TypeMapping{
+						"asorg": Mapping{
 							"type": "keyword",
 						},
-						"position": TypeMapping{
+						"position": Mapping{
 							"type": "geo_point",
 						},
-						"accuracy": TypeMapping{
+						"accuracy": Mapping{
 							"type": "integer",
 						},
-						"postcode": TypeMapping{
+						"postcode": Mapping{
 							"type": "keyword",
 						},
 					},
 				},
 			},
 		},
-		"indicators": TypeMapping{
-			"properties": TypeMapping{
-				"id": TypeMapping{
+		"indicators": Mapping{
+			"properties": Mapping{
+				"id": Mapping{
 					"type": "keyword",
 				},
-				"type": TypeMapping{
+				"type": Mapping{
 					"type": "keyword",
 				},
-				"value": TypeMapping{
+				"value": Mapping{
 					"type": "keyword",
 				},
-				"description": TypeMapping{
+				"description": Mapping{
 					"type": "keyword",
 				},
-				"category": TypeMapping{
+				"category": Mapping{
 					"type": "keyword",
 				},
-				"author": TypeMapping{
+				"author": Mapping{
 					"type": "keyword",
 				},
-				"source": TypeMapping{
+				"source": Mapping{
 					"type": "keyword",
 				},
-				"probability": TypeMapping{
+				"probability": Mapping{
 					"type": "float",
 				},
 			},

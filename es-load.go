@@ -5,14 +5,15 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"github.com/olivere/elastic"
+	"github.com/prometheus/client_golang/prometheus"
+	"log"
 	"os"
 	"strconv"
 	"sync/atomic"
 	"time"
-	"context"
-	"log"
-	"github.com/olivere/elastic"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Loader struct {
@@ -81,331 +82,30 @@ func (s *Loader) elasticInit() error {
 		}
 
 		number_of_shards := strconv.Itoa(s.es_shards)
-		template := `{
-		  "template": "` + s.es_template + `*",
-		  "aliases": {
-		    "` + s.es_read_alias + `": {}
-		  },
-		  "settings": {
-		    "index.mapping.total_fields.limit": 5000,
-		    "number_of_shards": ` + number_of_shards + `,
-		    "number_of_replicas": 1,
-		    "routing.allocation.total_shards_per_node": ` + number_of_shards + `,
-		    "routing.allocation.include.box_type": "hot"
-		  },
-		  "mappings": {
-		    "` + s.es_object + `": {
-		      "properties": {
-		        "id": {
-		          "type": "keyword"
-		        },
-		        "time": {
-		          "type": "date"
-		        },
-		        "url": {
-		          "type": "keyword"
-		        },
-		        "action": {
-		          "type": "keyword"
-		        },
-		        "device": {
-		          "type": "keyword"
-		        },
-		        "network": {
-		          "type": "keyword"
-		        },
-		        "origin": {
-		          "type": "keyword"
-		        },
-		        "risk": {
-		          "type": "float"
-		        },
-				"operations" : {
-					"properties": {
-						"unknown": {
-							"type": "keyword"
-						}
-					}
-				},
-		        "dns": {
-		          "properties": {
-		            "type": {
-		              "type": "keyword"
-		            },
-		            "query": {
-		              "properties": {
-		                "name": {
-		                  "type": "keyword"
-		                },
-		                "type": {
-		                  "type": "keyword"
-		                },
-		                "class": {
-		                  "type": "keyword"
-		                }
-		              }
-		            },
-		            "answer": {
-		              "properties": {
-		                "name": {
-		                  "type": "keyword"
-		                },
-		                "type": {
-		                  "type": "keyword"
-		                },
-		                "class": {
-		                  "type": "keyword"
-		                },
-		                "address": {
-		                  "type": "keyword"
-		                }
-		              }
-		            }
-		          }
-		        },
-		        "http": {
-		          "properties": {
-		            "method": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "keyword"
-		            },
-		            "code": {
-		              "type": "integer"
-		            },
-		            "header": {
-		              "properties": {
-		                "User-Agent": {
-		                  "type": "keyword"
-		                },
-		                "Host": {
-		                  "type": "keyword"
-		                },
-		                "Content-Type": {
-		                  "type": "keyword"
-		                },
-		                "Server": {
-		                  "type": "keyword"
-		                },
-		                "Connection": {
-		                  "type": "keyword"
-		                }
-		              }
-		            }
-		          }
-		        },
-		        "ftp": {
-		          "properties": {
-		            "command": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "integer"
-		            },
-		            "text": {
-		              "type": "text"
-		            }
-		          }
-		        },
-		        "icmp": {
-		          "properties": {
-		            "type": {
-		              "type": "integer"
-		            },
-		            "code": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "sip": {
-		          "properties": {
-		            "method": {
-		              "type": "keyword"
-		            },
-		            "from": {
-		              "type": "keyword"
-		            },
-		            "to": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "keyword"
-		            },
-		            "code": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "smtp": {
-		          "properties": {
-		            "command": {
-		              "type": "keyword"
-		            },
-		            "from": {
-		              "type": "keyword"
-		            },
-		            "to": {
-		              "type": "keyword"
-		            },
-		            "status": {
-		              "type": "keyword"
-		            },
-		            "text": {
-		              "type": "text"
-		            },
-		            "code": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "ntp": {
-		          "properties": {
-		            "version": {
-		              "type": "integer"
-		            },
-		            "mode": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "unrecognised_payload": {
-		          "properties": {
-		            "sha1": {
-		              "type": "keyword"
-		            },
-		            "length": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "src": {
-		          "properties": {
-		            "ipv4": {
-		              "type": "ip"
-		            },
-		            "ipv6": {
-		              "type": "ip"
-		            },
-		            "tcp": {
-		              "type": "integer"
-		            },
-		            "udp": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "dest": {
-		          "properties": {
-		            "ipv4": {
-		              "type": "ip"
-		            },
-		            "ipv6": {
-		              "type": "ip"
-		            },
-		            "tcp": {
-		              "type": "integer"
-		            },
-		            "udp": {
-		              "type": "integer"
-		            }
-		          }
-		        },
-		        "location": {
-		          "properties": {
-		            "src": {
-		              "properties": {
-		                "city": {
-		                  "type": "keyword"
-		                },
-		                "iso": {
-		                  "type": "keyword"
-		                },
-		                "country": {
-		                  "type": "keyword"
-		                },
-		                "asnum": {
-		                  "type": "integer"
-		                },
-		                "asorg": {
-		                  "type": "keyword"
-		                },
-		                "position": {
-		                  "type": "geo_point"
-		                },
-		                "accuracy": {
-		                  "type": "integer"
-		                },
-		                "postcode": {
-		                  "type": "keyword"
-		                }
-		              }
-		            },
-		            "dest": {
-		              "properties": {
-		                "city": {
-		                  "type": "keyword"
-		                },
-		                "iso": {
-		                  "type": "keyword"
-		                },
-		                "country": {
-		                  "type": "keyword"
-		                },
-		                "asnum": {
-		                  "type": "integer"
-		                },
-		                "asorg": {
-		                  "type": "keyword"
-		                },
-		                "position": {
-		                  "type": "geo_point"
-		                },
-		                "accuracy": {
-		                  "type": "integer"
-		                },
-		                "postcode": {
-		                  "type": "keyword"
-		                }
-		              }
-		            }
-		          }
-		        },
-		        "indicators": {
-		          "properties": {
-		            "id": {
-		              "type": "keyword"
-		            },
-		            "type": {
-		              "type": "keyword"
-		            },
-		            "value": {
-		              "type": "keyword"
-		            },
-		            "description": {
-		              "type": "keyword"
-		            },
-		            "category": {
-		              "type": "keyword"
-		            },
-		            "author": {
-		              "type": "keyword"
-		            },
-		            "source": {
-		              "type": "keyword"
-		            },
-		            "probability": {
-		              "type": "float"
-		            }
-		          }
-		        }
-		      }
-		    }
-		  }
-		}`
+
+		template := Mapping{
+			"template": s.es_template + "*",
+			"aliases": Mapping{
+				s.es_read_alias: Mapping{},
+			},
+			"settings": Mapping{
+				"index.mapping.total_fields.limit":         5000,
+				"number_of_shards":                         number_of_shards,
+				"number_of_replicas":                       1,
+				"routing.allocation.total_shards_per_node": number_of_shards,
+				"routing.allocation.include.box_type":      "hot",
+			},
+			"mappings": mapping,
+		}
+
+		template_json, err := json.Marshal(&template)
+		if err != nil {
+			log.Printf("Couldn't encode template to JSON: %v",
+				err)
+		}
 
 		ipt, err := s.client.IndexPutTemplate(s.es_template).
-			BodyString(template).
+			BodyString(string(template_json)).
 			Do(context.Background())
 
 		if err != nil {
@@ -498,17 +198,17 @@ func (s *Loader) init() error {
 
 	//configuration specific to prometheus stats
 	/*
-	s.recvLabels = prometheus.Labels{}
-	s.eventLatency = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Name: "event_latency",
-			Help: "Latency from cyberprobe to store",
-		},
-		[]string{"store"},
-	)
+		s.recvLabels = prometheus.Labels{}
+		s.eventLatency = prometheus.NewSummaryVec(
+			prometheus.SummaryOpts{
+				Name: "event_latency",
+				Help: "Latency from cyberprobe to store",
+			},
+			[]string{"store"},
+		)
 
-	prometheus.MustRegister(s.eventLatency)
-*/
+		prometheus.MustRegister(s.eventLatency)
+	*/
 
 	return s.elasticInit()
 
@@ -539,4 +239,3 @@ func (h *Loader) recordLatency(ts int64, ob Observation) {
 	latency := ts - obsTime.UnixNano()
 	h.eventLatency.With(h.recvLabels).Observe(float64(latency))
 }
-

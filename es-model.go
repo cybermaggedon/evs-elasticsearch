@@ -10,8 +10,6 @@ import (
 	"strconv"
 )
 
-type TypeMapping map[string]interface{}
-
 type ObQuery struct {
 	Name  []string `json:"name,omitempty"`
 	Class []string `json:"class,omitempty"`

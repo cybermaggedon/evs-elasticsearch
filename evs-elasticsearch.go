@@ -5,21 +5,19 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	evs "github.com/cybermaggedon/evs-golang-api"
 	"log"
-	"fmt"
 	"os"
-	"encoding/json"
 )
 
-const (
-)
+const ()
 
 type ElasticSearch struct {
 
 	// Embed EventAnalytic framework
 	evs.EventAnalytic
-
 }
 
 // Initialisation
