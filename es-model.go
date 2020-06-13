@@ -1,5 +1,5 @@
 
-// FIXME: Some model stuff in here indicates proto needs extending.
+// ES model - presenting an event protobuf as an ElasticSearch event
 
 package main
 
@@ -10,6 +10,319 @@ import (
 	"encoding/binary"
 	"strconv"
 )
+
+const mappings = `
+{
+		    "cyberprobe": {
+		      "properties": {
+		        "id": {
+		          "type": "keyword"
+		        },
+		        "time": {
+		          "type": "date"
+		        },
+		        "url": {
+		          "type": "keyword"
+		        },
+		        "action": {
+		          "type": "keyword"
+		        },
+		        "device": {
+		          "type": "keyword"
+		        },
+		        "network": {
+		          "type": "keyword"
+		        },
+		        "origin": {
+		          "type": "keyword"
+		        },
+		        "risk": {
+		          "type": "float"
+		        },
+				"operations" : {
+					"properties": {
+						"unknown": {
+							"type": "keyword"
+						}
+					}
+				},
+		        "dns": {
+		          "properties": {
+		            "type": {
+		              "type": "keyword"
+		            },
+		            "query": {
+		              "properties": {
+		                "name": {
+		                  "type": "keyword"
+		                },
+		                "type": {
+		                  "type": "keyword"
+		                },
+		                "class": {
+		                  "type": "keyword"
+		                }
+		              }
+		            },
+		            "answer": {
+		              "properties": {
+		                "name": {
+		                  "type": "keyword"
+		                },
+		                "type": {
+		                  "type": "keyword"
+		                },
+		                "class": {
+		                  "type": "keyword"
+		                },
+		                "address": {
+		                  "type": "keyword"
+		                }
+		              }
+		            }
+		          }
+		        },
+		        "http": {
+		          "properties": {
+		            "method": {
+		              "type": "keyword"
+		            },
+		            "status": {
+		              "type": "keyword"
+		            },
+		            "code": {
+		              "type": "integer"
+		            },
+		            "header": {
+		              "properties": {
+		                "User-Agent": {
+		                  "type": "keyword"
+		                },
+		                "Host": {
+		                  "type": "keyword"
+		                },
+		                "Content-Type": {
+		                  "type": "keyword"
+		                },
+		                "Server": {
+		                  "type": "keyword"
+		                },
+		                "Connection": {
+		                  "type": "keyword"
+		                }
+		              }
+		            }
+		          }
+		        },
+		        "ftp": {
+		          "properties": {
+		            "command": {
+		              "type": "keyword"
+		            },
+		            "status": {
+		              "type": "integer"
+		            },
+		            "text": {
+		              "type": "text"
+		            }
+		          }
+		        },
+		        "icmp": {
+		          "properties": {
+		            "type": {
+		              "type": "integer"
+		            },
+		            "code": {
+		              "type": "integer"
+		            }
+		          }
+		        },
+		        "sip": {
+		          "properties": {
+		            "method": {
+		              "type": "keyword"
+		            },
+		            "from": {
+		              "type": "keyword"
+		            },
+		            "to": {
+		              "type": "keyword"
+		            },
+		            "status": {
+		              "type": "keyword"
+		            },
+		            "code": {
+		              "type": "integer"
+		            }
+		          }
+		        },
+		        "smtp": {
+		          "properties": {
+		            "command": {
+		              "type": "keyword"
+		            },
+		            "from": {
+		              "type": "keyword"
+		            },
+		            "to": {
+		              "type": "keyword"
+		            },
+		            "status": {
+		              "type": "keyword"
+		            },
+		            "text": {
+		              "type": "text"
+		            },
+		            "code": {
+		              "type": "integer"
+		            }
+		          }
+		        },
+		        "ntp": {
+		          "properties": {
+		            "version": {
+		              "type": "integer"
+		            },
+		            "mode": {
+		              "type": "integer"
+		            }
+		          }
+		        },
+		        "unrecognised_payload": {
+		          "properties": {
+		            "sha1": {
+		              "type": "keyword"
+		            },
+		            "length": {
+		              "type": "integer"
+		            }
+		          }
+		        },
+		        "src": {
+		          "properties": {
+		            "ipv4": {
+		              "type": "ip"
+		            },
+		            "ipv6": {
+		              "type": "ip"
+		            },
+		            "tcp": {
+		              "type": "integer"
+		            },
+		            "udp": {
+		              "type": "integer"
+		            }
+		          }
+		        },
+		        "dest": {
+		          "properties": {
+		            "ipv4": {
+		              "type": "ip"
+		            },
+		            "ipv6": {
+		              "type": "ip"
+		            },
+		            "tcp": {
+		              "type": "integer"
+		            },
+		            "udp": {
+		              "type": "integer"
+		            }
+		          }
+		        },
+		        "location": {
+		          "properties": {
+		            "src": {
+		              "properties": {
+		                "city": {
+		                  "type": "keyword"
+		                },
+		                "iso": {
+		                  "type": "keyword"
+		                },
+		                "country": {
+		                  "type": "keyword"
+		                },
+		                "asnum": {
+		                  "type": "integer"
+		                },
+		                "asorg": {
+		                  "type": "keyword"
+		                },
+		                "position": {
+		                  "type": "geo_point"
+		                },
+		                "accuracy": {
+		                  "type": "integer"
+		                },
+		                "postcode": {
+		                  "type": "keyword"
+		                }
+		              }
+		            },
+		            "dest": {
+		              "properties": {
+		                "city": {
+		                  "type": "keyword"
+		                },
+		                "iso": {
+		                  "type": "keyword"
+		                },
+		                "country": {
+		                  "type": "keyword"
+		                },
+		                "asnum": {
+		                  "type": "integer"
+		                },
+		                "asorg": {
+		                  "type": "keyword"
+		                },
+		                "position": {
+		                  "type": "geo_point"
+		                },
+		                "accuracy": {
+		                  "type": "integer"
+		                },
+		                "postcode": {
+		                  "type": "keyword"
+		                }
+		              }
+		            }
+		          }
+		        },
+		        "indicators": {
+		          "properties": {
+		            "id": {
+		              "type": "keyword"
+		            },
+		            "type": {
+		              "type": "keyword"
+		            },
+		            "value": {
+		              "type": "keyword"
+		            },
+		            "description": {
+		              "type": "keyword"
+		            },
+		            "category": {
+		              "type": "keyword"
+		            },
+		            "author": {
+		              "type": "keyword"
+		            },
+		            "source": {
+		              "type": "keyword"
+		            },
+		            "probability": {
+		              "type": "float"
+		            }
+		          }
+		        }
+		      }
+		    }
+		  }
+		}`
+
 
 type ObQuery struct {
 	Name  []string `json:"name,omitempty"`
