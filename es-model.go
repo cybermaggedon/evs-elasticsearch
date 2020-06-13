@@ -3,10 +3,8 @@
 package main
 
 import (
-	"encoding/binary"
 	evs "github.com/cybermaggedon/evs-golang-api"
 	"github.com/golang/protobuf/ptypes"
-	"net"
 	"strconv"
 )
 
@@ -122,32 +120,6 @@ type Observation struct {
 	Operations map[string]string `json:"operations,omitempty"`
 }
 
-// Converts a 32-bit int to an IP address
-// FIXME: Copied from detector, put in a library
-func int32ToIp(ipLong uint32) net.IP {
-	ipByte := make([]byte, 4)
-	binary.BigEndian.PutUint32(ipByte, ipLong)
-	return net.IP(ipByte)
-}
-
-// Converts a byte array to an IP address. This is for IPv6 addresses.
-func bytesToIp(b []byte) net.IP {
-	return net.IP(b)
-}
-
-func addressToString(addr *evs.Address) string {
-	switch a := addr.AddressVariant.(type) {
-	case *evs.Address_Ipv4:
-		return int32ToIp(a.Ipv4).String()
-	case *evs.Address_Ipv6:
-		return bytesToIp(a.Ipv6).String()
-	case *evs.Address_Port:
-		return strconv.Itoa(int(a.Port))
-	default:
-		return ""
-	}
-}
-
 func Convert(ev *evs.Event) *Observation {
 
 	ob := &Observation{}
@@ -186,7 +158,7 @@ func Convert(ev *evs.Event) *Observation {
 				answer.Type = append(answer.Type, val.Type)
 				answer.Class = append(answer.Class, val.Class)
 				answer.Address = append(answer.Address,
-					addressToString(val.Address))
+					evs.AddressToString(val.Address))
 
 			}
 			ob.Dns.Answer = answer
@@ -332,22 +304,19 @@ func Convert(ev *evs.Event) *Observation {
 
 	for _, val := range ev.Src {
 		var cls, addr string
+		addr = evs.AddressToString(val.Address)
 		switch val.Protocol {
 		case evs.Protocol_ipv4:
 			cls = "ipv4"
-			addr = int32ToIp(val.Address.GetIpv4()).String()
 			break
 		case evs.Protocol_ipv6:
 			cls = "ipv6"
-			addr = bytesToIp(val.Address.GetIpv6()).String()
 			break
 		case evs.Protocol_tcp:
 			cls = "tcp"
-			addr = strconv.Itoa(int(val.Address.GetPort()))
 			break
 		case evs.Protocol_udp:
 			cls = "udp"
-			addr = strconv.Itoa(int(val.Address.GetPort()))
 		default:
 			continue
 		}
@@ -359,22 +328,19 @@ func Convert(ev *evs.Event) *Observation {
 
 	for _, val := range ev.Dest {
 		var cls, addr string
+		addr = strconv.Itoa(int(val.Address.GetPort()))
 		switch val.Protocol {
 		case evs.Protocol_ipv4:
 			cls = "ipv4"
-			addr = int32ToIp(val.Address.GetIpv4()).String()
 			break
 		case evs.Protocol_ipv6:
 			cls = "ipv6"
-			addr = bytesToIp(val.Address.GetIpv6()).String()
 			break
 		case evs.Protocol_tcp:
 			cls = "tcp"
-			addr = strconv.Itoa(int(val.Address.GetPort()))
 			break
 		case evs.Protocol_udp:
 			cls = "udp"
-			addr = strconv.Itoa(int(val.Address.GetPort()))
 		default:
 			continue
 		}
