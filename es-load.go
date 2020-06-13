@@ -25,8 +25,7 @@ type Loader struct {
 	es_read_alias  string
 	es_shards      int
 	es_object      string
-	eventLatency   *prometheus.SummaryVec
-	recvLabels     prometheus.Labels
+	event_latency  prometheus.Summary
 }
 
 // Can use this to keep track of ES failures.
@@ -197,18 +196,12 @@ func (s *Loader) init() error {
 	s.es_object = getenv("ELASTICSEARCH_OBJECT", "observation")
 
 	//configuration specific to prometheus stats
-	/*
-		s.recvLabels = prometheus.Labels{}
-		s.eventLatency = prometheus.NewSummaryVec(
-			prometheus.SummaryOpts{
-				Name: "event_latency",
-				Help: "Latency from cyberprobe to store",
-			},
-			[]string{"store"},
-		)
-
-		prometheus.MustRegister(s.eventLatency)
-	*/
+	s.event_latency = prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name: "event_latency",
+			Help: "Latency from cyberprobe to store",
+		})
+	prometheus.MustRegister(s.event_latency)
 
 	return s.elasticInit()
 
@@ -237,5 +230,5 @@ func (h *Loader) recordLatency(ts int64, ob Observation) {
 		log.Printf("Date Parse Error: %s", err.Error())
 	}
 	latency := ts - obsTime.UnixNano()
-	h.eventLatency.With(h.recvLabels).Observe(float64(latency))
+	h.event_latency.Observe(float64(latency))
 }
