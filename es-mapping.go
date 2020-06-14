@@ -2,9 +2,7 @@ package main
 
 type Mapping map[string]interface{}
 
-var mapping = Mapping{"cyberprobe": obMapping}
-
-var obMapping = Mapping{
+var mapping = Mapping{
 	"properties": Mapping{
 		"id": Mapping{
 			"type": "keyword",
@@ -29,13 +27,6 @@ var obMapping = Mapping{
 		},
 		"risk": Mapping{
 			"type": "float",
-		},
-		"operations": Mapping{
-			"properties": Mapping{
-				"unknown": Mapping{
-					"type": "keyword",
-				},
-			},
 		},
 		"dns": Mapping{
 			"properties": Mapping{

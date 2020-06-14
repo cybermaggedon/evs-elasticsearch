@@ -10,92 +10,136 @@ import (
 	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
-	"os"
 	"strconv"
-	"sync/atomic"
 	"time"
 )
 
 type Loader struct {
-	client         *elastic.Client
-	bps            *elastic.BulkProcessor
-	url            string
-	es_template    string
-	es_write_alias string
-	es_read_alias  string
-	es_shards      int
-	es_object      string
-	event_latency  prometheus.Summary
+	LoaderConfig
+	client        *elastic.Client
+	bps           *elastic.BulkProcessor
+	event_latency prometheus.Summary
+	flushed       prometheus.Summary
+	committed     prometheus.Summary
+	indexed       prometheus.Summary
+	succeeded     prometheus.Summary
+	failed        prometheus.Summary
 }
 
-// Can use this to keep track of ES failures.
-// FIXME: Should integrate stats.
-var afters, failures int64
-var afterRequests int64
+const (
+	FIELDS_LIMIT    = "index.mapping.total_fields.limit"
+	SHARDS          = "number_of_shards"
+	REPLICAS        = "number_of_replicas"
+	SHARDS_PER_NODE = "routing.allocation.total_shards_per_node"
+	BOX_TYPE        = "routing.allocation.include.box_type"
+)
 
-func afterFn(executionId int64, requests []elastic.BulkableRequest,
-	response *elastic.BulkResponse, err error) {
+func (l *Loader) GenerateTemplate() Mapping {
 
-	curAfters := atomic.AddInt64(&afters, 1)
+	number_of_shards := strconv.Itoa(l.shards)
 
-	if err != nil {
-		atomic.AddInt64(&failures, 1)
+	template := Mapping{
+		"template": l.template + "*",
+		"aliases": Mapping{
+			l.read_alias: Mapping{},
+		},
+		"settings": Mapping{
+			FIELDS_LIMIT:    5000,
+			SHARDS:          number_of_shards,
+			REPLICAS:        1,
+			SHARDS_PER_NODE: number_of_shards,
+		},
+		"mappings": mapping,
 	}
-	curFailures := atomic.LoadInt64(&failures)
 
-	curReqs := atomic.AddInt64(&afterRequests, int64(len(requests)))
-
-	if curReqs%100000 == 0 {
-		log.Printf("Stats: batches=%d failed=%d objects=%d", curAfters,
-			curFailures, curReqs)
+	if l.box_type != "" {
+		template["settings"].(Mapping)[BOX_TYPE] = l.box_type
 	}
+
+	return template
 
 }
 
-func (s *Loader) elasticInit() error {
+func (l *Loader) InitMetrics() {
+
+	//configuration specific to prometheus stats
+	l.event_latency = prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name: "event_latency",
+			Help: "Latency from cyberprobe to store",
+		})
+	prometheus.MustRegister(l.event_latency)
+
+	l.flushed = prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name: "es_flushed",
+			Help: "Number of flush interval invocations",
+		})
+	prometheus.MustRegister(l.flushed)
+
+	l.committed = prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name: "es_committed",
+			Help: "Numer of bulk request commits",
+		})
+	prometheus.MustRegister(l.committed)
+
+	l.indexed = prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name: "es_indexed",
+			Help: "Number of requests indexes",
+		})
+	prometheus.MustRegister(l.indexed)
+
+	l.succeeded = prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name: "es_succeeded",
+			Help: "Number of successful requests",
+		})
+	prometheus.MustRegister(l.succeeded)
+
+	l.failed = prometheus.NewSummary(
+		prometheus.SummaryOpts{
+			Name: "es_failed",
+			Help: "Number of failed request",
+		})
+	prometheus.MustRegister(l.failed)
+
+}
+
+func (l *Loader) InitClient() {
 
 	// Open ElasticSearch connection.
 
 	for {
 
 		var err error
-		s.client, err = elastic.NewClient(elastic.SetURL(s.url))
+		l.client, err = elastic.NewClient(elastic.SetURL(l.url))
 		if err != nil {
-			log.Printf("Elasticsearch connection: %s", err.Error())
+			log.Printf("Elasticsearch connection: %v", err)
+			time.Sleep(1 * time.Second * 5)
 			continue
 		}
 
 		break
 
-		time.Sleep(1 * time.Second * 5)
-
 	}
+
+}
+
+func (l *Loader) InitTemplate() {
 
 	for {
 
-		tmplExists, err := s.client.IndexTemplateExists(s.es_template).
+		tmplExists, err := l.client.IndexTemplateExists(l.template).
 			Do(context.Background())
 		if err != nil {
 			log.Printf("Elasticsearch: %s", err.Error())
+			time.Sleep(time.Second * 5)
 			continue
 		}
 
-		number_of_shards := strconv.Itoa(s.es_shards)
-
-		template := Mapping{
-			"template": s.es_template + "*",
-			"aliases": Mapping{
-				s.es_read_alias: Mapping{},
-			},
-			"settings": Mapping{
-				"index.mapping.total_fields.limit":         5000,
-				"number_of_shards":                         number_of_shards,
-				"number_of_replicas":                       1,
-				"routing.allocation.total_shards_per_node": number_of_shards,
-				"routing.allocation.include.box_type":      "hot",
-			},
-			"mappings": mapping,
-		}
+		template := l.GenerateTemplate()
 
 		template_json, err := json.Marshal(&template)
 		if err != nil {
@@ -103,7 +147,7 @@ func (s *Loader) elasticInit() error {
 				err)
 		}
 
-		ipt, err := s.client.IndexPutTemplate(s.es_template).
+		ipt, err := l.client.IndexPutTemplate(l.template).
 			BodyString(string(template_json)).
 			Do(context.Background())
 
@@ -120,17 +164,17 @@ func (s *Loader) elasticInit() error {
 
 		if tmplExists {
 			log.Print("Index Template Update Complete")
-			time.Sleep(time.Second * 5)
 			break
 		}
 
 		time.Sleep(time.Second * 1)
 
-		ci, err := s.client.CreateIndex(s.es_write_alias + "-000001").
+		ci, err := l.client.CreateIndex(l.write_alias + "-000001").
 			Do(context.Background())
 
 		if err != nil {
-			log.Printf("(CreateEmptyIndex) (ignored): %s", err.Error())
+			log.Printf("(CreateEmptyIndex) (ignored): %s",
+				err.Error())
 		} else {
 			if !ci.Acknowledged {
 				log.Print("Create index not acknowledged.")
@@ -141,11 +185,12 @@ func (s *Loader) elasticInit() error {
 
 		time.Sleep(time.Second * 1)
 
-		ara, err := s.client.Alias().Add(s.es_write_alias+"-000001", s.es_write_alias).
+		ara, err := l.client.Alias().
+			Add(l.write_alias+"-000001", l.write_alias).
 			Do(context.Background())
 
 		if err != nil {
-			log.Printf("(AddWriteAlias) (ignored): %s", err.Error())
+			log.Printf("(AddWriteAlias) (ignored): %v", err)
 		} else {
 			if !ara.Acknowledged {
 				log.Print("Add write alias not acknowledged.")
@@ -155,80 +200,80 @@ func (s *Loader) elasticInit() error {
 		}
 
 	}
+}
 
-	time.Sleep(time.Second * 1)
+func (l *Loader) InitBulkProcessor() error {
 
 	var err error
-	s.bps, err = s.client.BulkProcessor().
+	l.bps, err = l.client.BulkProcessor().
 		Name("Worker-1").
 		Workers(5).
 		BulkActions(25).
 		BulkSize(5 * 1024 * 1024).
 		FlushInterval(1 * time.Second).
-		After(afterFn).
+		Stats(true).
 		Do(context.Background())
 	if err != nil {
 		log.Printf("BulkProcess: %v", err)
-
-		// FIXME: Need to retry that one.
-		os.Exit(1)
+		return err
 	}
 
 	return nil
 
 }
 
-func getenv(env string, def string) string {
-	if val, ok := os.LookupEnv(env); ok {
-		return val
+func (l *Loader) StatsObserver() {
+	for {
+		stats := l.bps.Stats()
+		l.flushed.Observe(float64(stats.Flushed))
+		l.committed.Observe(float64(stats.Committed))
+		l.indexed.Observe(float64(stats.Indexed))
+		l.succeeded.Observe(float64(stats.Succeeded))
+		l.failed.Observe(float64(stats.Failed))
+
+		time.Sleep(time.Second)
 	}
-	return def
 }
 
-func (s *Loader) init() error {
+func (l *Loader) Init() error {
 
-	// Get configuration values from environment variables.
-	s.url = getenv("ELASTICSEARCH_URL", "http://localhost:9200")
-	s.es_read_alias = getenv("ELASTICSEARCH_READ_ALIAS", "cyberprobe")
-	s.es_write_alias = getenv("ELASTICSEARCH_WRITE_ALIAS", "active-cyberprobe")
-	s.es_template = getenv("ELASTICSEARCH_TEMPLATE", "active-cyberprobe")
-	s.es_shards, _ = strconv.Atoi(getenv("ELASTICSEARCH_SHARDS", "3"))
-	s.es_object = getenv("ELASTICSEARCH_OBJECT", "observation")
+	l.InitMetrics()
+	l.InitClient()
+	l.InitTemplate()
+	err := l.InitBulkProcessor()
+	if err != nil {
+		return err
+	}
 
-	//configuration specific to prometheus stats
-	s.event_latency = prometheus.NewSummary(
-		prometheus.SummaryOpts{
-			Name: "event_latency",
-			Help: "Latency from cyberprobe to store",
-		})
-	prometheus.MustRegister(s.event_latency)
+	// Stats scraper
+	go l.StatsObserver()
 
-	return s.elasticInit()
+	return nil
 
 }
 
-func (h *Loader) Output(ob Observation, id string) error {
+func (l *Loader) Load(ob *Observation) error {
 
 	bir := elastic.NewBulkIndexRequest().
 		Doc(ob).
-		Id(id).
-		Index(h.es_write_alias).
-		Type(h.es_object)
+		Id(ob.Id).
+		Index(l.write_alias).
+		Type(l.object)
 
 	ts := time.Now().UnixNano()
-	go h.recordLatency(ts, ob)
+	go l.recordLatency(ts, ob)
 
-	h.bps.Add(bir)
+	l.bps.Add(bir)
 
 	return nil
 
 }
 
-func (h *Loader) recordLatency(ts int64, ob Observation) {
+func (l *Loader) recordLatency(ts int64, ob *Observation) {
 	obsTime, err := time.Parse(time.RFC3339, ob.Time)
 	if err != nil {
 		log.Printf("Date Parse Error: %s", err.Error())
 	}
 	latency := ts - obsTime.UnixNano()
-	h.event_latency.Observe(float64(latency))
+	l.event_latency.Observe(float64(latency))
 }

@@ -5,7 +5,7 @@ package main
 import (
 	evs "github.com/cybermaggedon/evs-golang-api"
 	"github.com/golang/protobuf/ptypes"
-	"strconv"
+	"fmt"
 )
 
 type ObQuery struct {
@@ -130,7 +130,8 @@ func Convert(ev *evs.Event) *Observation {
 	ob.Network = ev.Network
 	ob.Origin = ev.Origin.String()
 	tm, _ := ptypes.Timestamp(ev.Time)
-	ob.Time = tm.String()
+	ob.Time = tm.Format("2006-01-02T15:04:05.999Z")
+	fmt.Println(ob.Time)
 	ob.Url = ev.Url
 	ob.Location = ev.Location
 	//	ob.Risk = ev.Risk
@@ -304,21 +305,9 @@ func Convert(ev *evs.Event) *Observation {
 
 	for _, val := range ev.Src {
 		var cls, addr string
-		addr = evs.AddressToString(val.Address)
-		switch val.Protocol {
-		case evs.Protocol_ipv4:
-			cls = "ipv4"
-			break
-		case evs.Protocol_ipv6:
-			cls = "ipv6"
-			break
-		case evs.Protocol_tcp:
-			cls = "tcp"
-			break
-		case evs.Protocol_udp:
-			cls = "udp"
-		default:
-			continue
+		cls = val.Protocol.String()
+		if val.Address != nil {
+			addr = evs.AddressToString(val.Address)
 		}
 		if _, ok := ob.Src[cls]; !ok {
 			ob.Src[cls] = []string{}
@@ -328,21 +317,9 @@ func Convert(ev *evs.Event) *Observation {
 
 	for _, val := range ev.Dest {
 		var cls, addr string
-		addr = strconv.Itoa(int(val.Address.GetPort()))
-		switch val.Protocol {
-		case evs.Protocol_ipv4:
-			cls = "ipv4"
-			break
-		case evs.Protocol_ipv6:
-			cls = "ipv6"
-			break
-		case evs.Protocol_tcp:
-			cls = "tcp"
-			break
-		case evs.Protocol_udp:
-			cls = "udp"
-		default:
-			continue
+		cls = val.Protocol.String()
+		if val.Address != nil {
+			addr = evs.AddressToString(val.Address)
 		}
 		if _, ok := ob.Dest[cls]; !ok {
 			ob.Dest[cls] = []string{}
