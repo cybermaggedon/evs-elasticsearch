@@ -59,8 +59,6 @@ func (e *ElasticSearch) Init(binding string) error {
 // Event handler for new events.
 func (e *ElasticSearch) Event(ev *evs.Event, p map[string]string) error {
 
-	log.Print("event")
-
 	obs := Convert(ev)
 
 	err := e.loader.Load(obs)
