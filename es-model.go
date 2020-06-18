@@ -157,8 +157,14 @@ func Convert(ev *pb.Event) *Observation {
 				answer.Name = append(answer.Name, val.Name)
 				answer.Type = append(answer.Type, val.Type)
 				answer.Class = append(answer.Class, val.Class)
-				answer.Address = append(answer.Address,
-					evs.AddressToString(val.Address))
+				if answer.Address != nil {
+					ad := evs.AddressToString(val.Address)
+					answer.Address = append(answer.Address,
+						ad)
+				} else {
+					answer.Address = append(answer.Address,
+						"")
+				}
 
 			}
 			ob.Dns.Answer = answer
