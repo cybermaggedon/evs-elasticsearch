@@ -15,7 +15,7 @@ import (
 )
 
 type Loader struct {
-	LoaderConfig
+	EsConfig
 	client        *elastic.Client
 	bps           *elastic.BulkProcessor
 	event_latency prometheus.Summary
@@ -276,4 +276,15 @@ func (l *Loader) recordLatency(ts int64, ob *Observation) {
 	}
 	latency := ts - obsTime.UnixNano()
 	l.event_latency.Observe(float64(latency))
+}
+
+func (lc EsConfig) NewLoader() (*Loader, error) {
+	l := &Loader{
+		EsConfig: lc,
+	}
+	err := l.Init()
+	if err != nil {
+		return nil, err
+	}
+	return l, nil
 }

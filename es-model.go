@@ -4,8 +4,8 @@ package main
 
 import (
 	evs "github.com/cybermaggedon/evs-golang-api"
+	pb "github.com/cybermaggedon/evs-golang-api/protos"
 	"github.com/golang/protobuf/ptypes"
-	"fmt"
 )
 
 type ObQuery struct {
@@ -111,7 +111,7 @@ type Observation struct {
 
 	Unrecognised *ObUnrecog `json:"unrecognised_payload,omitempty"`
 
-	Location *evs.Locations `json:"location,omitempty"`
+	Location *pb.Locations `json:"location,omitempty"`
 
 	Indicators *ObIndicators `json:"indicators,omitempty"`
 
@@ -120,7 +120,7 @@ type Observation struct {
 	Operations map[string]string `json:"operations,omitempty"`
 }
 
-func Convert(ev *evs.Event) *Observation {
+func Convert(ev *pb.Event) *Observation {
 
 	ob := &Observation{}
 
@@ -131,13 +131,12 @@ func Convert(ev *evs.Event) *Observation {
 	ob.Origin = ev.Origin.String()
 	tm, _ := ptypes.Timestamp(ev.Time)
 	ob.Time = tm.Format("2006-01-02T15:04:05.999Z")
-	fmt.Println(ob.Time)
 	ob.Url = ev.Url
 	ob.Location = ev.Location
 	//	ob.Risk = ev.Risk
 
 	switch d := ev.Detail.(type) {
-	case *evs.Event_DnsMessage:
+	case *pb.Event_DnsMessage:
 
 		msg := d.DnsMessage
 
@@ -166,14 +165,14 @@ func Convert(ev *evs.Event) *Observation {
 		}
 		break
 
-	case *evs.Event_HttpRequest:
+	case *pb.Event_HttpRequest:
 		ob.Http = &ObHttp{
 			Method: d.HttpRequest.Method,
 			Header: d.HttpRequest.Header,
 		}
 		break
 
-	case *evs.Event_HttpResponse:
+	case *pb.Event_HttpResponse:
 		ob.Http = &ObHttp{
 			Status: d.HttpResponse.Status,
 			Code:   d.HttpResponse.Code,
@@ -181,27 +180,27 @@ func Convert(ev *evs.Event) *Observation {
 		}
 		break
 
-	case *evs.Event_FtpCommand:
+	case *pb.Event_FtpCommand:
 		ob.Ftp = &ObFtp{
 			Command: d.FtpCommand.Command,
 		}
 		break
 
-	case *evs.Event_FtpResponse:
+	case *pb.Event_FtpResponse:
 		ob.Ftp = &ObFtp{
 			Status: d.FtpResponse.Status,
 			Text:   d.FtpResponse.Text,
 		}
 		break
 
-	case *evs.Event_Icmp:
+	case *pb.Event_Icmp:
 		ob.Icmp = &ObIcmp{
 			Type: d.Icmp.Type,
 			Code: d.Icmp.Code,
 		}
 		break
 
-	case *evs.Event_SipRequest:
+	case *pb.Event_SipRequest:
 		ob.Sip = &ObSip{
 			Method: d.SipRequest.Method,
 			From:   d.SipRequest.From,
@@ -209,7 +208,7 @@ func Convert(ev *evs.Event) *Observation {
 		}
 		break
 
-	case *evs.Event_SipResponse:
+	case *pb.Event_SipResponse:
 		ob.Sip = &ObSip{
 			Code:   d.SipResponse.Code,
 			Status: d.SipResponse.Status,
@@ -218,55 +217,55 @@ func Convert(ev *evs.Event) *Observation {
 		}
 		break
 
-	case *evs.Event_SmtpCommand:
+	case *pb.Event_SmtpCommand:
 		ob.Smtp = &ObSmtp{
 			Command: d.SmtpCommand.Command,
 		}
 		break
 
-	case *evs.Event_SmtpResponse:
+	case *pb.Event_SmtpResponse:
 		ob.Smtp = &ObSmtp{
 			Status: d.SmtpResponse.Status,
 			Text:   d.SmtpResponse.Text,
 		}
 		break
 
-	case *evs.Event_SmtpData:
+	case *pb.Event_SmtpData:
 		ob.Smtp = &ObSmtp{
 			From: d.SmtpData.From,
 			To:   d.SmtpData.To,
 		}
 		break
 
-	case *evs.Event_NtpTimestamp:
+	case *pb.Event_NtpTimestamp:
 		ob.Ntp = &ObNtp{
 			Version: d.NtpTimestamp.Version,
 			Mode:    d.NtpTimestamp.Mode,
 		}
 		break
 
-	case *evs.Event_NtpControl:
+	case *pb.Event_NtpControl:
 		ob.Ntp = &ObNtp{
 			Version: d.NtpControl.Version,
 			Mode:    d.NtpControl.Mode,
 		}
 		break
 
-	case *evs.Event_NtpPrivate:
+	case *pb.Event_NtpPrivate:
 		ob.Ntp = &ObNtp{
 			Version: d.NtpPrivate.Version,
 			Mode:    d.NtpPrivate.Mode,
 		}
 		break
 
-	case *evs.Event_UnrecognisedStream:
+	case *pb.Event_UnrecognisedStream:
 		ob.Unrecognised = &ObUnrecog{
 			//			Sha1:   d.UnrecognisedStream.PayloadHash,
 			//			Length: d.UnrecognisedStream.PayloadLength,
 		}
 		break
 
-	case *evs.Event_UnrecognisedDatagram:
+	case *pb.Event_UnrecognisedDatagram:
 		ob.Unrecognised = &ObUnrecog{
 			//			Sha1:   d.UnrecognisedDatagram.PayloadHash,
 			//			Length: d.UnrecognisedDatagram.PayloadLength,

@@ -6,63 +6,58 @@ package main
 
 import (
 	evs "github.com/cybermaggedon/evs-golang-api"
+	pb "github.com/cybermaggedon/evs-golang-api/protos"
 	"log"
-	"os"
-	"strconv"
 )
 
 const ()
 
 type ElasticSearch struct {
+	*EsConfig
 
-	// Embed EventAnalytic framework
-	evs.EventAnalytic
+	// Embed event analytic framework
+	*evs.EventSubscriber
+	*evs.EventProducer
+	evs.Interruptible
 
 	loader *Loader
 }
 
 // Initialisation
-func (e *ElasticSearch) Init(binding string) error {
+func NewElasticSearch(ec *EsConfig) *ElasticSearch {
 
-	lc := NewLoader()
-
-	if val, ok := os.LookupEnv("ELASTICSEARCH_URL"); ok {
-		lc = lc.Url(val)
-	}
-	if val, ok := os.LookupEnv("ELASTICSEARCH_READ_ALIAS"); ok {
-		lc = lc.ReadAlias(val)
-	}
-	if val, ok := os.LookupEnv("ELASTICSEARCH_WRITE_ALIAS"); ok {
-		lc = lc.WriteAlias(val)
-	}
-	if val, ok := os.LookupEnv("ELASTICSEARCH_TEMPLATE"); ok {
-		lc = lc.Template(val)
-	}
-	if val, ok := os.LookupEnv("ELASTICSEARCH_SHARDS"); ok {
-		shards, _ := strconv.Atoi(val)
-		lc = lc.Shards(shards)
-	}
-	if val, ok := os.LookupEnv("ELASTICSEARCH_BOX_TYPE"); ok {
-		lc = lc.BoxType(val)
+	e := &ElasticSearch{
+		EsConfig: ec,
 	}
 
 	var err error
-	e.loader, err = lc.Build()
+	e.EventSubscriber, err = evs.NewEventSubscriber(e.Name, e.Input, e)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	e.EventAnalytic.Init(binding, []string{}, e)
-	return nil
+	e.EventProducer, err = evs.NewEventProducer(e.Name, e.Outputs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e.RegisterStop(e)
+
+	e.loader, err = e.NewLoader()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return e
 }
 
 // Event handler for new events.
-func (e *ElasticSearch) Event(ev *evs.Event, p map[string]string) error {
+func (e *ElasticSearch) Event(ev *pb.Event, p map[string]string) error {
 
 	obs := Convert(ev)
 
 	err := e.loader.Load(obs)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 
@@ -71,17 +66,13 @@ func (e *ElasticSearch) Event(ev *evs.Event, p map[string]string) error {
 
 func main() {
 
-	e := &ElasticSearch{}
+	gc := NewEsConfig()
 
-	binding, ok := os.LookupEnv("INPUT")
-	if !ok {
-		binding = "ioc"
-	}
+	g := NewElasticSearch(gc)
 
-	e.Init(binding)
+	log.Print("Initialisation complete")
 
-	log.Print("Initialisation complete.")
-
-	e.Run()
+	g.Run()
+	log.Print("Shutdown.")
 
 }
