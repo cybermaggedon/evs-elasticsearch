@@ -52,32 +52,26 @@ func NewEsConfig() *EsConfig {
 
 }
 
-func (lc EsConfig) Url(url string) *EsConfig {
+func (lc *EsConfig) Url(url string) {
 	lc.url = url
-	return &lc
 }
 
-func (lc EsConfig) ReadAlias(val string) *EsConfig {
+func (lc *EsConfig) ReadAlias(val string) {
 	lc.read_alias = val
-	return &lc
 }
 
-func (lc EsConfig) WriteAlias(val string) *EsConfig {
+func (lc *EsConfig) WriteAlias(val string) {
 	lc.write_alias = val
-	return &lc
 }
 
-func (lc EsConfig) Template(val string) *EsConfig {
+func (lc *EsConfig) Template(val string) {
 	lc.template = val
-	return &lc
 }
 
-func (lc EsConfig) Shards(val int) *EsConfig {
+func (lc *EsConfig) Shards(val int) {
 	lc.shards = val
-	return &lc
 }
 
-func (lc EsConfig) BoxType(val string) *EsConfig {
+func (lc *EsConfig) BoxType(val string) {
 	lc.box_type = val
-	return &lc
 }
