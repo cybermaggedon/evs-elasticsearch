@@ -14,7 +14,9 @@ evs-elasticsearch: ${SOURCE} go.mod go.sum
 
 build: evs-elasticsearch
 	${DOCKER} build -t ${REPO}:${VERSION} -f Dockerfile .
+	${DOCKER} tag ${REPO}:${VERSION} ${REPO}:latest
 
 push:
 	${DOCKER} push ${REPO}:${VERSION}
+	${DOCKER} push ${REPO}:latest
 
