@@ -65,42 +65,42 @@ func (l *Loader) InitMetrics() {
 	//configuration specific to prometheus stats
 	l.event_latency = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name: "event_latency",
+			Name: "elasticsearch_event_latency",
 			Help: "Latency from cyberprobe to store",
 		})
 	prometheus.MustRegister(l.event_latency)
 
 	l.flushed = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name: "es_flushed",
+			Name: "elasticsearch_flushed",
 			Help: "Number of flush interval invocations",
 		})
 	prometheus.MustRegister(l.flushed)
 
 	l.committed = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name: "es_committed",
+			Name: "elasticsearch_committed",
 			Help: "Numer of bulk request commits",
 		})
 	prometheus.MustRegister(l.committed)
 
 	l.indexed = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name: "es_indexed",
+			Name: "elasticsearch_indexed",
 			Help: "Number of requests indexes",
 		})
 	prometheus.MustRegister(l.indexed)
 
 	l.succeeded = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name: "es_succeeded",
+			Name: "elasticsearch_succeeded",
 			Help: "Number of successful requests",
 		})
 	prometheus.MustRegister(l.succeeded)
 
 	l.failed = prometheus.NewSummary(
 		prometheus.SummaryOpts{
-			Name: "es_failed",
+			Name: "elasticsearch_failed",
 			Help: "Number of failed request",
 		})
 	prometheus.MustRegister(l.failed)

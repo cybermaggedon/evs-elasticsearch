@@ -66,10 +66,10 @@ func (e *ElasticSearch) Event(ev *pb.Event, p map[string]string) error {
 
 func main() {
 
-	gc := NewEsConfig()
-	g := NewElasticSearch(gc)
+	ec := NewEsConfig()
+	e := NewElasticSearch(ec)
 	log.Print("Initialisation complete")
-	g.Run()
+	e.Run()
 	log.Print("Shutdown.")
 
 }
