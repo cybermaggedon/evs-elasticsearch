@@ -49,7 +49,7 @@ The following environment variables are used to configure:
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `INPUT` | Specifies the Pulsar topic to subscribe to.  This is just the topic part of the URL e.g. `cyberprobe`. | `ioc` |
+| `INPUT` | Specifies the Pulsar topic to subscribe to.  This is just the topic part of the URL e.g. `cyberprobe`. | `withioc` |
 | `METRICS_PORT` | Specifies the port number to serve Prometheus metrics on.  If not set, metrics will not be served. The container has a default setting of 8088. | `8088` |
 | `ELASTICSEARCH_URL` | Specifies the URL of the ElasticSearch service. | `http://localhost:9200` |
 | `ELASTICSEARCH_READ_ALIAS` | Specifies the alias used by clients to access the indexes. | `cyberprobe` |

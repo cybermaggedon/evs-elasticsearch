@@ -20,7 +20,7 @@ type EsConfig struct {
 func NewEsConfig() *EsConfig {
 
 	c := &EsConfig{
-		Config:      evs.NewConfig("evs-elasticsearch", "ioc", nil),
+		Config:      evs.NewConfig("evs-elasticsearch", "withioc", nil),
 		url:         "http://localhost:9200",
 		read_alias:  "cyberprobe",
 		write_alias: "active-cyberprobe",
