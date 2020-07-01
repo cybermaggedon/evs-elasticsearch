@@ -31,12 +31,12 @@ func NewElasticSearch(ec *EsConfig) *ElasticSearch {
 	}
 
 	var err error
-	e.EventSubscriber, err = evs.NewEventSubscriber(e.Name, e.Input, e)
+	e.EventSubscriber, err = evs.NewEventSubscriber(e, e)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	e.EventProducer, err = evs.NewEventProducer(e.Name, e.Outputs)
+	e.EventProducer, err = evs.NewEventProducer(e)
 	if err != nil {
 		log.Fatal(err)
 	}
