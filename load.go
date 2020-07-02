@@ -62,7 +62,6 @@ func (l *Loader) GenerateTemplate() Mapping {
 
 func (l *Loader) InitMetrics() {
 
-	//configuration specific to prometheus stats
 	l.event_latency = prometheus.NewSummary(
 		prometheus.SummaryOpts{
 			Name: "elasticsearch_event_latency",
@@ -223,16 +222,26 @@ func (l *Loader) InitBulkProcessor() error {
 }
 
 func (l *Loader) StatsObserver() {
+	
+	prev := l.bps.Stats()
+
 	for {
+
 		stats := l.bps.Stats()
-		l.flushed.Observe(float64(stats.Flushed))
-		l.committed.Observe(float64(stats.Committed))
-		l.indexed.Observe(float64(stats.Indexed))
-		l.succeeded.Observe(float64(stats.Succeeded))
-		l.failed.Observe(float64(stats.Failed))
+
+		// Stats is a running count, so observe the deltas
+		l.flushed.Observe(float64(stats.Flushed - prev.Flushed))
+		l.committed.Observe(float64(stats.Committed - prev.Committed))
+		l.indexed.Observe(float64(stats.Indexed - prev.Indexed))
+		l.succeeded.Observe(float64(stats.Succeeded - prev.Succeeded))
+		l.failed.Observe(float64(stats.Failed - prev.Failed))
+
+		prev = stats
 
 		time.Sleep(time.Second)
+
 	}
+
 }
 
 func (l *Loader) Init() error {
@@ -245,7 +254,7 @@ func (l *Loader) Init() error {
 		return err
 	}
 
-	// Stats scraper
+	// Stats manager
 	go l.StatsObserver()
 
 	return nil
