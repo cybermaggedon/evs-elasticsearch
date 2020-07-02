@@ -7,7 +7,7 @@ GO=GOPATH=$$(pwd)/go go
 
 all: evs-elasticsearch build
 
-SOURCE=evs-elasticsearch.go es-model.go es-load.go es-mapping.go es-config.go
+SOURCE=main.go model.go load.go mapping.go config.go
 
 evs-elasticsearch: ${SOURCE} go.mod go.sum
 	${GO} build -o $@ ${SOURCE}
