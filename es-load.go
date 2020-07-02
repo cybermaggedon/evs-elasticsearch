@@ -260,7 +260,7 @@ func (l *Loader) Load(ob *Observation) error {
 		Index(l.write_alias).
 		Type(l.object)
 
-	ts := time.Now().UnixNano()
+	ts := time.Now()
 	go l.recordLatency(ts, ob)
 
 	l.bps.Add(bir)
@@ -269,12 +269,12 @@ func (l *Loader) Load(ob *Observation) error {
 
 }
 
-func (l *Loader) recordLatency(ts int64, ob *Observation) {
+func (l *Loader) recordLatency(ts time.Time, ob *Observation) {
 	obsTime, err := time.Parse(time.RFC3339, ob.Time)
 	if err != nil {
 		log.Printf("Date Parse Error: %s", err.Error())
 	}
-	latency := ts - obsTime.UnixNano()
+	latency := ts.Sub(obsTime)
 	l.event_latency.Observe(float64(latency))
 }
 
